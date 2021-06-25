@@ -47,6 +47,10 @@
             "MonoGame.Framework.DesktopGL": {
               "target": "Package",
               "version": "[3.8.0.1641, )"
+            },
+            "Nopipeline.Task": {
+              "target": "Package",
+              "version": "[2.1.5, )"
             }
           },
           "imports": [

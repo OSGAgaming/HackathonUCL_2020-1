@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.Collections.Generic;
 
 namespace HackathonUCL
 {
@@ -13,6 +14,7 @@ namespace HackathonUCL
         public static GameTime gameTime;
         public static Random rand;
         public static Camera mainCamera;
+        public static List<IUpdate> Updateables = new List<IUpdate>();
 
         public Main()
         {
@@ -31,7 +33,11 @@ namespace HackathonUCL
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
-
+            spriteBatch = new SpriteBatch(GraphicsDevice);
+            mainCamera = new Camera();
+            mainCamera.CamPos = Vector2.Zero;
+            //font = Content.Load<SpriteFont>("HackFont");
+            TextureCache.LoadTextures(Content);
             // TODO: use this.Content to load your game content here
         }
 
@@ -39,6 +45,11 @@ namespace HackathonUCL
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+
+            foreach (IUpdate update in Updateables)
+            {
+                update.Update();
+            }
 
             // TODO: Add your update logic here
 
