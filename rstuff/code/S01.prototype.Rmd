@@ -1,0 +1,198 @@
+---
+title: "prototype"
+author: "Stefanie Mueller"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::readthedown:
+    highlight: kate
+    lightbox: true
+    gallery: true
+    toc_depth: 3
+    use_bookdown: true
+    fig_caption: true
+    code_folding: show
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r knitr_init, echo=FALSE, cache=FALSE}
+# load libraries
+library(knitr)
+library(rmdformats)
+
+# define functions
+  myDT = function(data){
+  data %>% DT::datatable(rownames = FALSE,
+    filter = 'bottom',
+    extensions = 'Buttons',
+      options = list(
+        searching = TRUE,
+        fixedColumns = TRUE,
+        autoWidth = TRUE,
+        dom = 'Bfrtip',
+        buttons = c('copy', 'csv', 'excel'))
+    )
+}
+
+## Global options
+#options(max.print="75")
+opts_chunk$set(echo=TRUE,
+	             cache=FALSE,
+               prompt=TRUE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE,
+               fig.width = 10)
+opts_knit$set(width=75)
+```
+
+# PREFACE
+
+## PROJECT
+Explore influence of political system on policy stringency and severity of 
+COVID epidemic in individual countries.
+
+## OBJECTIVE
+protoype analysis between stringency, COVID infections and deaths and political
+system
+
+## load libraries
+```{r}
+library(tidyverse)
+library(data.table)
+library(maps)
+library(viridis)
+```
+
+## Version Info
+```{r}
+sessionInfo()
+```
+
+## Set Global Varibales
+```{r}
+DIR="/home/rstudio/NONWORK/HackathonUCL_2020-1/rstuff/"
+OUTFOLDER=paste0(DIR,"/data/output/")
+INPUTFOLDER=paste0(DIR,"/data/input/")
+SCRIPT="S01"
+DATE=Sys.Date()
+```
+
+# Load and Format Oxford Government Response data
+Data Source:
+[https://github.com/OxCGRT/covid-policy-tracker](https://github.com/OxCGRT/covid-policy-tracker)
+
+
+## Load latest data version from github
+```{r}
+datain = fread("https://raw.githubusercontent.com/OxCGRT/covid-policy-tracker/master/data/OxCGRT_latest.csv")
+```
+
+## Save local copy
+```{r}
+write_csv(datain,
+          paste0(OUTFOLDER, SCRIPT, ".oxford_government_reponse_latest.", DATE, ".csv.gz"))
+```
+
+### Glimpse at initial data, look at 10 random data rows
+```{r}
+datain %>% 
+  sample_n(size=10) %>% myDT()
+```
+
+
+## Select Nationwide data and drop regional data
+```{r}
+data_nationwide = datain %>% 
+  filter(Jurisdiction == "NAT_TOTAL") 
+```
+
+## Select data available till 1st of June 2021
+```{r}
+data_natiowide_june_1st = data_nationwide %>% 
+  filter(Date=="20210601") 
+```
+
+# Make first map
+## Total death COVID numbers till 1st of June 2021
+```{r}
+world_map <- map_data("world")
+plot_data01 = world_map %>% 
+  left_join(data_natiowide_june_1st[,c("CountryName", "ConfirmedDeaths")], 
+            by=c("region"="CountryName"))
+
+ggplot(plot_data01, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = ConfirmedDeaths ), color = "white")+
+  scale_fill_viridis_c(option = "C") +
+  theme_void() 
+```
+
+## Policy Stringency Index 1st of June 2021
+```{r}
+plot_data02 = world_map %>% 
+  left_join(data_natiowide_june_1st[,c("CountryName", "StringencyIndex")], 
+            by=c("region"="CountryName"))
+
+ggplot(plot_data02, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = StringencyIndex ), color = "white")+
+  scale_fill_viridis_c(option = "C") +
+  theme_void() 
+```
+
+
+# Load further annotation data
+Sources:
+- population numbers for 2020: [https://www.worldometers.info/world-population/population-by-country/](https://www.worldometers.info/world-population/population-by-country/)
+- democracy index and government type: [https://en.wikipedia.org/wiki/Democracy_Index](https://en.wikipedia.org/wiki/Democracy_Index)
+```{r}
+annotation = fread(paste0(INPUTFOLDER, "further_annotations.csv"))
+```
+
+## look at annotations for some examplary countries
+```{r}
+annotation %>% myDT()
+```
+
+## Combine with Oxford data
+```{r}
+data_natiowide_june_1st_annotation = data_natiowide_june_1st %>% 
+  inner_join(annotation, by="CountryName")
+```
+
+# Analysis Influence of Governement System on Policy Stringency
+
+## Plot Government System for chosen countries
+```{r}
+plot_data03 = world_map %>% 
+  left_join(data_natiowide_june_1st_annotation[,c("CountryName", "Government_Style", "StringencyIndex")], 
+            by=c("region"="CountryName"))
+
+ggplot(plot_data03, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = Government_Style ), color = "white")+
+  theme_void() 
+```
+
+## Compare Policy Stringency
+```{r}
+ggplot(plot_data03, aes(x=Government_Style, y=StringencyIndex,
+                        color=Government_Style)) +
+   theme_bw() +
+  #geom_point(position=position_jitter(width=0.3), alpha=0.6) +
+  geom_boxplot(size=1.4,fill=NA, outlier.size=0) +
+  geom_boxplot(size=1.4,fill=NA, outlier.size=0, color=alpha("black",0.3)) +
+ 
+    # change titles here:
+  #labs(y="Y Axis title", x="X Axis Title", title="Title") +
+  theme(title = element_text(size=rel(1.3), face = "bold"),
+        axis.title.y = element_text(vjust=1.5),
+        axis.title.x = element_text(vjust=-1.5),
+        axis.text = element_text(size=rel(1.25)),
+        axis.text.x = element_text(angle = 30,hjust = 1),
+        legend.text = element_text(size=rel(1.3)),
+        strip.text = element_text(size=rel(1.3)),
+        plot.margin = unit(c(1,1,1,2), "cm"),
+        panel.grid.major = element_line(colour="grey60"))
+
+```
+
