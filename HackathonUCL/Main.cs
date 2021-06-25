@@ -16,9 +16,11 @@ namespace HackathonUCL
         public static Camera mainCamera;
         public static List<IUpdate> Updateables = new List<IUpdate>();
 
+        public static LocationHost Locations = new LocationHost();
         public Main()
         {
             graphics = new GraphicsDeviceManager(this);
+
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
         }
@@ -26,6 +28,9 @@ namespace HackathonUCL
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
+            graphics.PreferredBackBufferWidth = 1033;
+            graphics.PreferredBackBufferHeight = 516;
+            graphics.ApplyChanges();
 
             base.Initialize();
         }
@@ -33,11 +38,13 @@ namespace HackathonUCL
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            spriteBatch = new SpriteBatch(GraphicsDevice);
             mainCamera = new Camera();
+            rand = new Random();
+
             mainCamera.CamPos = Vector2.Zero;
             //font = Content.Load<SpriteFont>("HackFont");
             TextureCache.LoadTextures(Content);
+            LocationCache.LoadLocations();
             // TODO: use this.Content to load your game content here
         }
 
@@ -60,8 +67,10 @@ namespace HackathonUCL
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            spriteBatch.Begin(transformMatrix: mainCamera.Transform, samplerState: SamplerState.PointClamp);
+            spriteBatch.Begin();
 
+            spriteBatch.Draw(TextureCache.Map, TextureCache.Map.Bounds, Color.White);
+            Locations.Render(spriteBatch);
             spriteBatch.End();
             // TODO: Add your drawing code here
 
