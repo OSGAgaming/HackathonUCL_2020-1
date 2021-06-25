@@ -1,0 +1,4 @@
+C:\Users\tafid\Documents\HackathonUCL_2020-1\HackathonUCL\obj\Debug\netcoreapp3.1\HackathonUCL.csprojAssemblyReference.cache
+C:\Users\tafid\Documents\HackathonUCL_2020-1\HackathonUCL\obj\Debug\netcoreapp3.1\HackathonUCL.AssemblyInfoInputs.cache
+C:\Users\tafid\Documents\HackathonUCL_2020-1\HackathonUCL\obj\Debug\netcoreapp3.1\HackathonUCL.AssemblyInfo.cs
+C:\Users\tafid\Documents\HackathonUCL_2020-1\HackathonUCL\obj\Debug\netcoreapp3.1\HackathonUCL.csproj.CoreCompileInputs.cache
