@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\tafid\\source\\repos\\HackathonUCL\\HackathonUCL\\HackathonUCL.csproj": {}
+    "C:\\Users\\tafid\\Documents\\HackathonUCL_2020-1\\HackathonUCL\\HackathonUCL.csproj": {}
   },
   "projects": {
-    "C:\\Users\\tafid\\source\\repos\\HackathonUCL\\HackathonUCL\\HackathonUCL.csproj": {
+    "C:\\Users\\tafid\\Documents\\HackathonUCL_2020-1\\HackathonUCL\\HackathonUCL.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\tafid\\source\\repos\\HackathonUCL\\HackathonUCL\\HackathonUCL.csproj",
+        "projectUniqueName": "C:\\Users\\tafid\\Documents\\HackathonUCL_2020-1\\HackathonUCL\\HackathonUCL.csproj",
         "projectName": "HackathonUCL",
-        "projectPath": "C:\\Users\\tafid\\source\\repos\\HackathonUCL\\HackathonUCL\\HackathonUCL.csproj",
+        "projectPath": "C:\\Users\\tafid\\Documents\\HackathonUCL_2020-1\\HackathonUCL\\HackathonUCL.csproj",
         "packagesPath": "C:\\Users\\tafid\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\tafid\\source\\repos\\HackathonUCL\\HackathonUCL\\obj\\",
+        "outputPath": "C:\\Users\\tafid\\Documents\\HackathonUCL_2020-1\\HackathonUCL\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\tafid\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -40,6 +40,10 @@
         "netcoreapp3.1": {
           "targetAlias": "netcoreapp3.1",
           "dependencies": {
+            "Microsoft.Office.Interop.Excel": {
+              "target": "Package",
+              "version": "[15.0.4795.1000, )"
+            },
             "MonoGame.Content.Builder.Task": {
               "target": "Package",
               "version": "[3.8.0.1641, )"

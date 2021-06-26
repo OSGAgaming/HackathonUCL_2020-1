@@ -1,12 +1,24 @@
 {
   "version": 2,
-  "dgSpecHash": "x+Ok0Ph+HXGu1VPloO9IqNe7hHTgpZdhg5Aw8qITyAijU4cgw/6zXICG3E3SXMYLNGPKZBzaROpphmSiCv/E1A==",
+  "dgSpecHash": "E6PhkHQBlhXX+itMupp4zI6fJGTsOyjOC4kNZrf5111s3kC4tPhOCeU3YTG7leohH2Mqhw/5ZoWPkd6BdNEEtg==",
   "success": true,
-  "projectFilePath": "C:\\Users\\tafid\\source\\repos\\HackathonUCL\\HackathonUCL\\HackathonUCL.csproj",
+  "projectFilePath": "C:\\Users\\tafid\\Documents\\HackathonUCL_2020-1\\HackathonUCL\\HackathonUCL.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\tafid\\.nuget\\packages\\microsoft.office.interop.excel\\15.0.4795.1000\\microsoft.office.interop.excel.15.0.4795.1000.nupkg.sha512",
     "C:\\Users\\tafid\\.nuget\\packages\\monogame.content.builder.task\\3.8.0.1641\\monogame.content.builder.task.3.8.0.1641.nupkg.sha512",
     "C:\\Users\\tafid\\.nuget\\packages\\monogame.framework.desktopgl\\3.8.0.1641\\monogame.framework.desktopgl.3.8.0.1641.nupkg.sha512",
     "C:\\Users\\tafid\\.nuget\\packages\\nopipeline.task\\2.1.5\\nopipeline.task.2.1.5.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'Microsoft.Office.Interop.Excel 15.0.4795.1000' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8' instead of the project target framework '.NETCoreApp,Version=v3.1'. This package may not be fully compatible with your project.",
+      "libraryId": "Microsoft.Office.Interop.Excel",
+      "targetGraphs": [
+        ".NETCoreApp,Version=v3.1"
+      ]
+    }
+  ]
 }

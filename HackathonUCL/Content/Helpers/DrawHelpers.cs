@@ -18,8 +18,9 @@ namespace HackathonUCL
 
         public static void DrawClosedCircle(Vector2 pos, float rad, float alpha = 1f, Color color = default)
         {
-            Point point = new Point((int)pos.X - (int)rad, (int)pos.Y - (int)rad);
-            Main.spriteBatch.Draw(TextureCache.ClosedCircle, new Rectangle(point, new Point((int)rad * 2, (int)rad * 2)), color * alpha);
+            Texture2D tex = TextureCache.ClosedCircle;
+
+            Main.spriteBatch.Draw(tex, pos, tex.Bounds, color * alpha, 0f, tex.TextureCenter(), rad / tex.Width, SpriteEffects.None, 0f);
         }
         public static bool isClicking => Mouse.GetState().LeftButton == ButtonState.Pressed;
         public static Point MouseScreen => Mouse.GetState().Position;
