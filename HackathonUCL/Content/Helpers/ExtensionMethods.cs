@@ -5,6 +5,7 @@ namespace HackathonUCL
 {
     public static class Extensions
     {
+        public static Vector2 ToScreen(this Vector2 v) => (v / Main.mainCamera.scale + Main.mainCamera.CamPos);
         public static float NextFloat(this Random random, float min, float max)
         {
             if (min > max)

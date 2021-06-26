@@ -1,6 +1,7 @@
 ﻿using HackathonUCL;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -13,25 +14,34 @@ namespace HackathonUCL
         public string CountryName;
         public int Population;
         public int NumberOfCases;
-        public int Stringency;
+        public float Stringency;
         public string GovernmentalSystem;
     }
     public class LocationHost
     {
         public const float SPEEDOFSIMULATION = 0.1f;
+        public const int NUMBEROFDATAPOINTS = 100;
         public const float TIMESTEP = 10;
 
+        public static bool IsPlaying;
+
         public List<Location> Locations = new List<Location>();
-        public Vector2 GraphPosition => new Vector2(50, 460);
+        public Vector2 GraphPosition => new Vector2(10, Utils.ScreenSize.Y - 10);
 
         public float Time { get; set; }
-        public float GraphInterp;
+        public static float GraphInterp;
 
         public int DeltaFetchLength;
+        public float DeltaTime;
+        public float PreviousTime;
+        public static float TotalTime => NUMBEROFDATAPOINTS * TIMESTEP;
+
+        public static string FocalLocation = "";
+        public static int FocalIndex = -1;
+
         public void AppendLocation(string Name, Vector2 position, int Population = 0)
         {
-            Location l = new Location(Name, position);
-            l.Population = Population;
+            Location l = new Location(Name, position, Population);
             Locations.Add(l);
         }
 
@@ -43,7 +53,7 @@ namespace HackathonUCL
             foreach (Location l in Locations)
             {
                 l.Render(sb);
-                FetchLength = l.InterpolationValueCache.Count;   
+                FetchLength = l.InterpolationValueCache.Count;
             }
 
             if (DeltaFetchLength != FetchLength) GraphInterp = 0;
@@ -54,6 +64,23 @@ namespace HackathonUCL
             {
                 ColorPicker++;
                 Color c = new Color(((ColorPicker * 800) % 255) / 255f, ((ColorPicker * 400) % 255) / 255f, ((ColorPicker * 200) % 255) / 255f);
+
+                Utils.DrawBoxFill(
+                new Rectangle(
+                Utils.ScreenSize.X - 60,
+                100 + (int)ColorPicker * 50,
+                30,
+                20).Inf(1, 1), Color.White);
+
+                Utils.DrawBoxFill(
+                new Rectangle(
+                Utils.ScreenSize.X - 60,
+                100 + (int)ColorPicker * 50,
+                30,
+                20), c);
+
+                Utils.DrawTextFromCenter(l.Name, Color.Black, new Vector2(Utils.ScreenSize.X - 170, 100 + (int)ColorPicker * 50));
+
                 if (FetchLength > 1)
                 {
                     for (int i = 1; i < FetchLength; i++)
@@ -61,8 +88,8 @@ namespace HackathonUCL
                         float v1 = l.InterpolationValueCache[i - 1];
                         float v2 = l.InterpolationValueCache[i];
 
-                        Vector2 g1 = new Vector2(GraphPosition.X + (i - 1) * 10, GraphPosition.Y - v1 * 2);
-                        Vector2 g2 = new Vector2(GraphPosition.X + i * 10, GraphPosition.Y - v2 * 2);
+                        Vector2 g1 = new Vector2(GraphPosition.X + (i - 1) * 20, GraphPosition.Y - v1 * 0.05f);
+                        Vector2 g2 = new Vector2(GraphPosition.X + i * 20, GraphPosition.Y - v2 * 0.05f);
 
                         if (i == FetchLength - 1)
                         {
@@ -74,17 +101,54 @@ namespace HackathonUCL
                         {
                             Utils.DrawLine(g1, g2, c, 1);
                         }
-
                     }
                 }
             }
 
             Utils.DrawLine(GraphPosition, GraphPosition - new Vector2(0, MathHelper.SmoothStep(0, 200, Main.GlobalTimer / 100f)), Color.Black, 2);
-            Utils.DrawLine(GraphPosition, GraphPosition + new Vector2(MathHelper.SmoothStep(0, 200, Main.GlobalTimer / 100f), 0), Color.Black, 2);
+            Utils.DrawLine(GraphPosition, GraphPosition + new Vector2(MathHelper.SmoothStep(0, 400, Main.GlobalTimer / 100f), 0), Color.Black, 2);
 
             DeltaFetchLength = FetchLength;
         }
 
-        public void Update() => Time += SPEEDOFSIMULATION;
+
+        public void Update()
+        {
+            DeltaTime = Time - PreviousTime;
+
+            if (Mouse.GetState().RightButton == ButtonState.Pressed)
+            {
+                FocalLocation = "";
+                FocalIndex = -1;
+            }
+
+            if (FocalIndex == -1 && FocalLocation != "")
+            {
+                for (int i = 0; i < Locations.Count; i++)
+                {
+                    if (Locations[i].Name == FocalLocation)
+                    {
+                        FocalIndex = i;
+                        break;
+                    }
+                }
+
+            }
+            PreviousTime = Time;
+
+            if (IsPlaying && Time < TotalTime) Time += SPEEDOFSIMULATION;
+
+            if (FocalIndex != -1)
+            {
+                Main.mainCamera.CamPos += (Locations[FocalIndex].DrawPosition - Utils.ScreenSize.ToVector2() / (2 * Main.mainCamera.scale) - Main.mainCamera.CamPos) / 64f;
+                Main.mainCamera.scale += (2 - Main.mainCamera.scale) / 64f;
+            }
+            else
+            {
+                Main.mainCamera.CamPos += (Vector2.Zero - Main.mainCamera.CamPos) / 64f;
+                Main.mainCamera.scale += (1 - Main.mainCamera.scale) / 20f;
+            }
+
+        }
     }
 }

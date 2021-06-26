@@ -10,10 +10,10 @@ namespace HackathonUCL
 {
     public static partial class Utils
     {
-        public static void DrawCircle(Vector2 pos, float rad, float alpha = 1f)
+        public static void DrawCircle(Vector2 pos, float rad, float alpha = 1f, Color color = default)
         {
             Point point = new Point((int)pos.X - (int)rad, (int)pos.Y - (int)rad);
-            Main.spriteBatch.Draw(TextureCache.Circle, new Rectangle(point, new Point((int)rad *2, (int)rad *2)), Color.Red* alpha);
+            Main.spriteBatch.Draw(TextureCache.Circle, new Rectangle(point, new Point((int)rad *2, (int)rad *2)), color * alpha);
         }
 
         public static void DrawClosedCircle(Vector2 pos, float rad, float alpha = 1f, Color color = default)
@@ -23,7 +23,7 @@ namespace HackathonUCL
             Main.spriteBatch.Draw(tex, pos, tex.Bounds, color * alpha, 0f, tex.TextureCenter(), rad / tex.Width, SpriteEffects.None, 0f);
         }
         public static bool isClicking => Mouse.GetState().LeftButton == ButtonState.Pressed;
-        public static Point MouseScreen => Mouse.GetState().Position;
+        public static Point MouseScreen => Mouse.GetState().Position.ToVector2().ToScreen().ToPoint();
         public static Point ScreenSize => new Point(Main.graphics.GraphicsDevice.Viewport.Width, Main.graphics.GraphicsDevice.Viewport.Height);
         public static Point ScreenCenter => new Point(Main.graphics.GraphicsDevice.Viewport.Width/2, Main.graphics.GraphicsDevice.Viewport.Height/2);
         public static Vector2 TextureCenter(this Texture2D texture) => new Vector2(texture.Width / 2, texture.Height / 2);

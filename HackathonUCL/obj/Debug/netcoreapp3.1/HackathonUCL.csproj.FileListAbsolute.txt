@@ -53,3 +53,5 @@ C:\Users\tafid\Documents\HackathonUCL_2020-1\HackathonUCL\obj\Debug\netcoreapp3.
 C:\Users\tafid\Documents\HackathonUCL_2020-1\HackathonUCL\obj\Debug\netcoreapp3.1\HackathonUCL.pdb
 C:\Users\tafid\Documents\HackathonUCL_2020-1\HackathonUCL\obj\Debug\netcoreapp3.1\HackathonUCL.genruntimeconfig.cache
 C:\Users\tafid\Documents\HackathonUCL_2020-1\HackathonUCL\bin\Debug\netcoreapp3.1\Content\HackFont.xnb
+C:\Users\tafid\Documents\HackathonUCL_2020-1\HackathonUCL\bin\Debug\netcoreapp3.1\Content\Textures\Forward.xnb
+C:\Users\tafid\Documents\HackathonUCL_2020-1\HackathonUCL\bin\Debug\netcoreapp3.1\Content\Textures\Pause.xnb
