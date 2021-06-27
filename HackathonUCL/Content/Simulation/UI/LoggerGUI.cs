@@ -43,6 +43,7 @@ namespace HackathonUCL
         PauseButton? Pause;
         Slider TimeSlider;
         StringencySlider StringencySlider;
+        DemocracySlider DemocracySlider;
         protected override void OnLoad()
         {
             Play = new PlayButton(TextureCache.Forward);
@@ -58,6 +59,11 @@ namespace HackathonUCL
             StringencySlider.StartLerp = Utils.ScreenSize.X - 150;
             StringencySlider.Y = Utils.ScreenSize.Y - 50;
 
+            DemocracySlider = new DemocracySlider();
+            DemocracySlider.EndLerp = Utils.ScreenSize.X - 220;
+            DemocracySlider.StartLerp = Utils.ScreenSize.X - 350;
+            DemocracySlider.Y = Utils.ScreenSize.Y - 50;
+
             Play.dimensions = new Rectangle(30,10, 50, 50);
             Pause.dimensions = new Rectangle(80, 10, 50, 50);
 
@@ -65,6 +71,7 @@ namespace HackathonUCL
             elements.Add(Pause);
             elements.Add(TimeSlider);
             elements.Add(StringencySlider);
+            elements.Add(DemocracySlider);
         }
         protected override void OnUpdate()
         {
@@ -80,6 +87,8 @@ namespace HackathonUCL
 
             Vector2 ASS = Utils.ScreenSize.ToVector2();
             int Count = MathHelper.Min(logger.Count , MaxOnscreenLogs);
+
+            Utils.DrawText(LocationHost.CurrentDate.ToString(), Color.Black * (Main.GlobalTimer / 10f), new Vector2(Utils.ScreenCenter.X, Utils.ScreenSize.Y - 50));
 
             for (int i = 0; i < Count; i++)
             {
@@ -241,7 +250,7 @@ namespace HackathonUCL
 
             Utils.DrawLine(new Vector2(StartLerp, Y), new Vector2(EndLerp, Y), Color.Black, 1);
             Utils.DrawClosedCircle(new Vector2(Current, Y), 12,1, Color.Black);
-            Utils.DrawClosedCircle(new Vector2(Current, Y), 10, 1, Color.White);
+            Utils.DrawClosedCircle(new Vector2(Current, Y), 10, 1, Color.Orange);
 
             isClicking = false;
         }
@@ -249,6 +258,50 @@ namespace HackathonUCL
         {
             Current = Mouse.GetState().X;
             LocationHost.StringencyModifier = Lerp * 2;
+
+            isClicking = true;
+        }
+    }
+
+    internal class DemocracySlider : UIElement
+    {
+        public float StartLerp;
+        public float EndLerp;
+
+        public float Current;
+        public float Y;
+        public float Alpha = 1;
+
+        private int width = 30;
+        private int height = 30;
+
+        private bool isClicking;
+
+        public float Lerp => (Current - StartLerp) / (EndLerp - StartLerp);
+
+        public override void Draw(SpriteBatch spriteBatch)
+        {
+
+            if (!isClicking)
+                Current = (LocationHost.DemocracyModifier / 2) * (EndLerp - StartLerp) + StartLerp;
+
+            Current = MathHelper.Clamp(Current, StartLerp, EndLerp);
+
+            dimensions = new Rectangle((int)Current - width / 2, (int)Y - height / 2, width, height);
+
+            Utils.DrawText("Democracy Factor", Color.Black, new Vector2(StartLerp + (EndLerp - StartLerp) / 2, Y - 40), 0);
+
+            Utils.DrawLine(new Vector2(StartLerp, Y), new Vector2(EndLerp, Y), Color.Black, 1);
+            Utils.DrawClosedCircle(new Vector2(Current, Y), 12, 1, Color.Black);
+            Utils.DrawClosedCircle(new Vector2(Current, Y), 10, 1, Color.Purple);
+
+
+            isClicking = false;
+        }
+        protected override void OnLeftClick()
+        {
+            Current = Mouse.GetState().X;
+            LocationHost.DemocracyModifier = Lerp * 2;
 
             isClicking = true;
         }
