@@ -36,7 +36,9 @@ namespace HackathonUCL
 
             var shake = new Vector2(Main.rand.Next(-screenShake, screenShake), Main.rand.Next(-screenShake, screenShake));
 
-            scale = Math.Clamp(scale, 0.3f, 2);
+            scale = Math.Clamp(scale, 0.3f, 5);
+
+            CamPos = new Vector2(Math.Clamp(CamPos.X, 0, Utils.ScreenSize.X - Utils.ScreenSize.X / scale), Math.Clamp(CamPos.Y,0, Utils.ScreenSize.Y - Utils.ScreenSize.Y / scale));
 
             Transform =
                  Matrix.CreateTranslation(new Vector3(-CameraCenter + shake, 0)) *
