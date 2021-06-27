@@ -14,20 +14,24 @@ namespace HackathonUCL
     {
         public bool IsActive => LocationCache.CountryVariables.ContainsKey(Name);
         public bool IsZoomed => LocationHost.FocalLocation == Name;
-        Flock flock;
+        private Flock flock;
+        private Flock flock2;
+
         public Vector2 DrawPosition { get; set; }
+        public string Name { get; }
+        public string GovernmentType { get; set; }
+
         public float TextAlpha = 0;
         public float Completion = 0;
 
-        public string Name { get; }
 
         public int NumberOfCases;
+
         public bool IsGoingForward => Main.Locations.DeltaTime > 0;
         public int CacheCount = 20;
         public int Population;
         public List<TimeStamp> History = new List<TimeStamp>();
         public List<HoverInfo> Info = new List<HoverInfo>();
-        //TODO: Find a better calc for this lmao
 
         public float CalculateRadius(float r) => r;
         public int StampIndex()
@@ -48,6 +52,8 @@ namespace HackathonUCL
 
         public float GetTotalCases() => CalculateRadius(MathHelper.SmoothStep(Info[StampIndex()].NumberOfCases, Info[StampIndex() + 1].NumberOfCases, InterpolationValue()));
 
+        public float GetProcessedCases(float n) => (float)Math.Log(n);
+
         public float GetStringency() => CalculateRadius(MathHelper.SmoothStep(Info[StampIndex()].Stringency, Info[StampIndex() + 1].Stringency, InterpolationValue()));
 
         public List<float> InterpolationValueCache = new List<float>();
@@ -58,15 +64,22 @@ namespace HackathonUCL
 
         public virtual void Render(SpriteBatch sb)
         {
-            Utils.DrawClosedCircle(DrawPosition, GetTotalCases() * 0.05f, 0.2f, Color.Red);
+            float ProcessedCases = GetProcessedCases(GetTotalCases() + (float)Math.E);
 
+            Utils.DrawClosedCircle(DrawPosition, ProcessedCases * 10, 0.2f, Color.Lerp(Color.Green, Color.DarkRed, ProcessedCases / 10f));
             float Stringency = GetStringency();
 
-            flock.MaxVel = (100 - Stringency) / 500f;
-            flock.MaxForce = (100 - Stringency) / 100000f;
+            flock.MaxVel = (100 - Stringency) / 1000f;
+            flock.MaxForce = (100 - Stringency) / 200000f;
             flock.Vision = (100 - Stringency) / 4f;
             flock.Alpha = Completion;
-            flock.Range = Stringency + 5;
+            flock.Range = Stringency + 15;
+
+            flock2.MaxVel = (100 - Stringency) / 1000f;
+            flock2.MaxForce = (100 - Stringency) / 200000f;
+            flock2.Vision = (100 - Stringency) / 4f;
+            flock2.Alpha = Completion;
+            flock2.Range = Stringency + 15;
 
             if (IsZoomed)
             {
@@ -79,6 +92,26 @@ namespace HackathonUCL
 
             if (Completion > 0.1f)
             {
+                Vector2 GStyleVec = Utils.MouseScreen.ToVector2() + new Vector2(40, MathHelper.SmoothStep(0, 60, Completion));
+
+                Utils.DrawText("Government Style:", Color.Black * Completion, GStyleVec, MathHelper.SmoothStep(0.2f, 0, Completion), new Vector2(0.8f));
+                Color lerp = default;
+                switch(GovernmentType)
+                {
+                    case "Flawed democracy":
+                        lerp = Color.Lerp(Color.White, Color.Yellow, Completion);
+                        break;
+                    case "Authoritarian":
+                        lerp = Color.Lerp(Color.White, Color.Red, Completion);
+                        break;
+                    case "Full democracy":
+                        lerp = Color.Lerp(Color.White, Color.Green, Completion);
+                        break;
+                    default:
+                        break;
+                }
+                Utils.DrawTextToLeft(GovernmentType, lerp * Completion, GStyleVec + new Vector2(40, 0), 0.8f, MathHelper.SmoothStep(0.2f, 0, Completion));
+
                 Utils.DrawLine(GraphPos1, GraphPos1 - new Vector2(0, MathHelper.SmoothStep(0, 50, Completion - 0.1f)), Color.Black * Completion, 1);
                 Utils.DrawLine(GraphPos1, GraphPos1 + new Vector2(MathHelper.SmoothStep(0, 90, Completion - 0.2f), 0), Color.Black * Completion, 1);
 
@@ -87,6 +120,10 @@ namespace HackathonUCL
 
                 Utils.DrawLine(GraphPos3, GraphPos3 - new Vector2(0, MathHelper.SmoothStep(0, 30, Completion - 0.3f)), Color.Black * Completion, 1);
                 Utils.DrawLine(GraphPos3, GraphPos3 + new Vector2(MathHelper.SmoothStep(0, 30, Completion - 0.4f), 0), Color.Black * Completion, 1);
+
+                Utils.DrawText("Stringency", Color.Black * Completion, GraphPos1 + new Vector2(50, -80), MathHelper.SmoothStep(-0.1f, 0, Completion), new Vector2(0.8f));
+
+                Utils.DrawText("Daily Cases", Color.Black * Completion, GraphPos2 + new Vector2(50, -80), MathHelper.SmoothStep(-0.2f, 0, Completion), new Vector2(0.8f));
 
                 for (int i = 1; i < CacheCount; i++)
                 {
@@ -102,8 +139,8 @@ namespace HackathonUCL
 
                         Vector2 SmoothStepPos1 = new Vector2(MathHelper.SmoothStep(v1.X, v2.X, 1- InterpolationValue()), MathHelper.SmoothStep(v1.Y, v2.Y, 1 - InterpolationValue()) - 1);
 
-                        float s1A = History[Index].Data.Cases * 0.2f;
-                        float s2A = History[Index - 1].Data.Cases * 0.2f;
+                        float s1A = GetProcessedCases(History[Index].Data.Cases + 1) * 4f;
+                        float s2A = GetProcessedCases(History[Index - 1].Data.Cases + 1) * 4f;
 
                         Vector2 v1A = new Vector2(GraphPos2.X + Index * 5, GraphPos2.Y - s1A);
                         Vector2 v2A = new Vector2(GraphPos2.X + (Index - 1) * 5, GraphPos2.Y - s2A);
@@ -182,11 +219,11 @@ namespace HackathonUCL
                 for (int i = 0; i < CacheCount; i++)
                 {
                     if (StampIndex() - CacheCount + i >= 0)
-                        InterpolationValueCache.Add(Info[StampIndex() - CacheCount + i].NumberOfCases);
+                        InterpolationValueCache.Add(GetProcessedCases(Info[StampIndex() - CacheCount + i].NumberOfCases) * 10);
                 }
             }
 
-            if ((Utils.MouseScreen.ToVector2() - DrawPosition).LengthSquared() <= 50 * 50)
+            if ((Utils.MouseScreen.ToVector2() - DrawPosition).LengthSquared() <= 50 * 50 && !LocationHost.HasHover)
             {
                 TextAlpha += (1 - TextAlpha) / 16f;
 
@@ -194,6 +231,8 @@ namespace HackathonUCL
                 {
                     LocationHost.FocalLocation = Name;
                 }
+
+                LocationHost.HasHover = true;
             }
             else
             {
@@ -203,10 +242,17 @@ namespace HackathonUCL
             Vector2 mousep = Utils.MouseScreen.ToVector2();
 
             Utils.DrawText(Name, c, mousep - new Vector2(-20, 100 / Main.mainCamera.scale), 0f, new Vector2(1 / Main.mainCamera.scale));
-            Utils.DrawText(Population.ToString(), c, mousep - new Vector2(-20, 85 / Main.mainCamera.scale), 0f, new Vector2(1 / Main.mainCamera.scale));
-            Utils.DrawText(Math.Round(GetCases()).ToString(), c, mousep - new Vector2(-20, 70 / Main.mainCamera.scale), 0f, new Vector2(1 / Main.mainCamera.scale));
+
+            Utils.DrawText("Population: " + Population.ToString(), c, mousep - new Vector2(-20, 85 / Main.mainCamera.scale), 0f, new Vector2(1 / Main.mainCamera.scale));
+            Utils.DrawText("Cases Today: " + Math.Round(GetCases()).ToString(), c, mousep - new Vector2(-20, 70 / Main.mainCamera.scale), 0f, new Vector2(1 / Main.mainCamera.scale));
+            Utils.DrawText("Total Cases: " + Math.Round(GetTotalCases()).ToString(), c, mousep - new Vector2(-20, 55 / Main.mainCamera.scale), 0f, new Vector2(1 / Main.mainCamera.scale));
+
+            if (PreviousModifier != LocationHost.StringencyModifier) Recalculate();
+
+            PreviousModifier = LocationHost.StringencyModifier;
         }
 
+        public float PreviousModifier;
         public void Recalculate()
         {
             Info = new List<HoverInfo>();
@@ -218,7 +264,7 @@ namespace HackathonUCL
                     HoverInfo hI = new HoverInfo();
                     hI.CountryName = Name;
                     hI.NumberOfCases = History[0].Data.Cases;
-                    hI.Stringency = History[0].Data.Stringency;
+                    hI.Stringency = History[0].Data.Stringency * (LocationHost.StringencyModifier * LocationHost.StringencyModifier);
 
                     Info.Add(hI);
                 }
@@ -226,11 +272,22 @@ namespace HackathonUCL
                 {
                     HoverInfo hI = new HoverInfo();
                     hI.CountryName = Name;
-                    hI.NumberOfCases = Info[i - 1].NumberOfCases + History[i].Data.Cases;
-                    hI.Stringency = History[i].Data.Stringency;
+
+                    int Coeficient = 20;
+                    int Factor = (int)(History[i].Data.Stringency * (1 - LocationHost.StringencyModifier)) * Coeficient;
+
+                    hI.NumberOfCases = Math.Max(Info[i - 1].NumberOfCases + History[i].Data.Cases + Factor, 0);
+                    hI.Stringency = History[i].Data.Stringency * (LocationHost.StringencyModifier * LocationHost.StringencyModifier);
 
                     Info.Add(hI);
                 }
+            }
+
+            InterpolationValueCache = new List<float>();
+            for (int i = 0; i < CacheCount; i++)
+            {
+                if (StampIndex() - CacheCount + i >= 0)
+                    InterpolationValueCache.Add(GetProcessedCases(Info[StampIndex() - CacheCount + i].NumberOfCases + (float)Math.E) * 10);
             }
         }
         public Location(string Name, Vector2 DrawPosition, int Population)
@@ -247,7 +304,12 @@ namespace HackathonUCL
                 flock = new Flock("Particles/Coralfin", 1f, 5, 15);
                 Main.boids.fishflocks.Add(flock);
 
-                flock.Populate(DrawPosition + new Vector2(Main.rand.NextFloat(-5, 5), Main.rand.NextFloat(-5, 5)), (int)Math.Log10(Population), 10, this);
+                flock.Populate(DrawPosition + new Vector2(Main.rand.NextFloat(-5, 5), Main.rand.NextFloat(-5, 5)), (int)Math.Log10(Population) * 2, 10, this);
+
+                flock2 = new Flock("Particles/Coralfin", 1f, 5, 15);
+                Main.boids.fishflocks.Add(flock2);
+
+                flock2.Populate(DrawPosition + new Vector2(Main.rand.NextFloat(-5, 5), Main.rand.NextFloat(-5, 5)), (int)Math.Log10(Population) * 2, 10, this);
             }
 
         }

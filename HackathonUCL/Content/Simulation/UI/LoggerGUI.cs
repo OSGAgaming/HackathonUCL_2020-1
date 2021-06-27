@@ -42,14 +42,21 @@ namespace HackathonUCL
         PlayButton? Play;
         PauseButton? Pause;
         Slider TimeSlider;
+        StringencySlider StringencySlider;
         protected override void OnLoad()
         {
             Play = new PlayButton(TextureCache.Forward);
             Pause = new PauseButton(TextureCache.Pause);
+
             TimeSlider = new Slider();
             TimeSlider.EndLerp = Utils.ScreenSize.X - 20;
             TimeSlider.StartLerp = Utils.ScreenSize.X - 150;
             TimeSlider.Y = 50;
+
+            StringencySlider = new StringencySlider();
+            StringencySlider.EndLerp = Utils.ScreenSize.X - 20;
+            StringencySlider.StartLerp = Utils.ScreenSize.X - 150;
+            StringencySlider.Y = Utils.ScreenSize.Y - 50;
 
             Play.dimensions = new Rectangle(30,10, 50, 50);
             Pause.dimensions = new Rectangle(80, 10, 50, 50);
@@ -57,6 +64,7 @@ namespace HackathonUCL
             elements.Add(Play);
             elements.Add(Pause);
             elements.Add(TimeSlider);
+            elements.Add(StringencySlider);
         }
         protected override void OnUpdate()
         {
@@ -88,6 +96,8 @@ namespace HackathonUCL
         public float alpha = 1;
 
         public Texture2D tex;
+        bool Hovering;
+        bool Clicking;
 
         public PlayButton(Texture2D tex)
         {
@@ -97,13 +107,24 @@ namespace HackathonUCL
         {
             Utils.DrawTextToLeft(Text + ExtraText, Color.White * alpha, dimensions.Location.ToVector2());
 
-            spriteBatch.Draw(tex, dimensions, Color.White * alpha);
+            if (Hovering) Utils.DrawRectangle(dimensions, Color.Gray);
+            if (Clicking) spriteBatch.Draw(tex, dimensions, Color.Gray * alpha * 0.5f);
+            else spriteBatch.Draw(tex, dimensions, Color.White * alpha);
+
+            Clicking = false;
+            Hovering = false;
         }
         protected override void OnLeftClick()
         {
             LocationHost.IsPlaying = true;
+
+            Clicking = true;
         }
 
+        protected override void OnHover()
+        {
+            Hovering = true;
+        }
     }
 
     internal class PauseButton : UIElement
@@ -113,6 +134,8 @@ namespace HackathonUCL
         public float alpha = 1;
 
         public Texture2D tex;
+        bool Hovering;
+        bool Clicking;
 
         public PauseButton(Texture2D tex)
         {
@@ -122,11 +145,23 @@ namespace HackathonUCL
         {
             Utils.DrawTextToLeft(Text + ExtraText, Color.White * alpha, dimensions.Location.ToVector2());
 
-            spriteBatch.Draw(tex, dimensions, Color.White * alpha);
+            if (Hovering) Utils.DrawRectangle(dimensions, Color.Gray);
+            if (Clicking) spriteBatch.Draw(tex, dimensions, Color.Gray * alpha * 0.5f);
+            else spriteBatch.Draw(tex, dimensions, Color.White * alpha);
+
+            Clicking = false;
+            Hovering = false;
         }
         protected override void OnLeftClick()
         {
             LocationHost.IsPlaying = false;
+
+            Clicking = true;
+        }
+
+        protected override void OnHover()
+        {
+            Hovering = true;
         }
 
     }
@@ -148,6 +183,8 @@ namespace HackathonUCL
         public float Lerp => (Current - StartLerp) / (EndLerp - StartLerp);
         public override void Draw(SpriteBatch spriteBatch)
         {
+            Utils.DrawText("Time", Color.Black, new Vector2(StartLerp + (EndLerp - StartLerp) / 2, Y - 40));
+
             if (!isClicking)
                 Current = (Main.Locations.Time / LocationHost.TotalTime) * (EndLerp - StartLerp) + StartLerp;
 
@@ -155,16 +192,19 @@ namespace HackathonUCL
             dimensions = new Rectangle((int)Current, (int)Y - height / 2, width, height);
 
             Utils.DrawLine(new Vector2(StartLerp, Y), new Vector2(EndLerp, Y), Color.Black, 1);
+
             Utils.DrawBoxFill(new Vector2(Current - 1, Y - height / 2 - 1), width + 2, height + 2, Color.Black);
             Utils.DrawBoxFill(new Vector2(Current, Y - height / 2), width, height, Color.White);
 
+            Utils.DrawBoxFill(new Vector2(Current - 1, Y - height / 2 - 1), width + 2, height + 2, Color.Black);
+            Utils.DrawBoxFill(new Vector2(Current, Y - height / 2), width, height, Color.White);
 
             isClicking = false;
         }
         protected override void OnLeftClick()
         {
             Current = Mouse.GetState().X - width /2;
-
+            
             Main.Locations.Time = LocationHost.TotalTime * Lerp;
 
             isClicking = true;
@@ -172,4 +212,45 @@ namespace HackathonUCL
 
     }
 
+    internal class StringencySlider : UIElement
+    {
+        public float StartLerp;
+        public float EndLerp;
+
+        public float Current;
+        public float Y;
+        public float Alpha = 1;
+
+        private int width = 30;
+        private int height = 30;
+
+        private bool isClicking;
+
+        public float Lerp => (Current - StartLerp) / (EndLerp - StartLerp);
+
+        public override void Draw(SpriteBatch spriteBatch)
+        {
+            Utils.DrawText("Stringency Coefficent", Color.Black, new Vector2(StartLerp + (EndLerp - StartLerp) / 2, Y - 40));
+
+            if (!isClicking)
+                Current = (LocationHost.StringencyModifier / 2) * (EndLerp - StartLerp) + StartLerp;
+
+            Current = MathHelper.Clamp(Current, StartLerp, EndLerp);
+
+            dimensions = new Rectangle((int)Current - width / 2, (int)Y - height / 2, width, height);
+
+            Utils.DrawLine(new Vector2(StartLerp, Y), new Vector2(EndLerp, Y), Color.Black, 1);
+            Utils.DrawClosedCircle(new Vector2(Current, Y), 12,1, Color.Black);
+            Utils.DrawClosedCircle(new Vector2(Current, Y), 10, 1, Color.White);
+
+            isClicking = false;
+        }
+        protected override void OnLeftClick()
+        {
+            Current = Mouse.GetState().X;
+            LocationHost.StringencyModifier = Lerp * 2;
+
+            isClicking = true;
+        }
+    }
 }

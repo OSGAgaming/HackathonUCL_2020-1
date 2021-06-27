@@ -23,6 +23,7 @@ namespace HackathonUCL
 
             //List<string> CountryNames = new List<string>();
             List<float> Stringency = new List<float>();
+            List<string> GovernmentType = new List<string>();
 
             int rowCounter = 0;
 
@@ -36,7 +37,6 @@ namespace HackathonUCL
                     {
                         var values = line.Split(';');
                         CountryNames.Add(values[0]);
-
                         if (int.TryParse(values[1], out _))
                         {
                             Population.Add(int.Parse(values[1]));
@@ -45,6 +45,7 @@ namespace HackathonUCL
                         {
                             Population.Add(-1);
                         }
+                        GovernmentType.Add(values[2]);
                     }
 
                     rowCounter++;
@@ -54,41 +55,77 @@ namespace HackathonUCL
             int rowCounter2 = 0;
             using (var reader = new StreamReader(@"C:\Users\tafid\Documents\HackathonUCL_2020-1\HackathonUCL\Content\Simulation\Datasets\stringency.csv"))
             {
-                while (!reader.EndOfStream)
+                using (var CaseReader = new StreamReader(@"C:\Users\tafid\Documents\HackathonUCL_2020-1\HackathonUCL\Content\Simulation\Datasets\owid-covid-data.csv"))
                 {
-                    if (rowCounter2 != 0)
+                    while (!reader.EndOfStream)
                     {
-                        var line = reader.ReadLine();
+                        if (rowCounter2 != 0)
+                        {
+                            var line = reader.ReadLine();
+                            var values = line.Split(',');
+
+                            if (!CountryVariables.ContainsKey(values[0]))
+                            {
+                                CountryVariables.Add(values[0], new List<TimeStamp>());
+
+                                if (float.TryParse(values[3], out _))
+                                {
+                                    CountryVariables[values[0]].Add(new TimeStamp(CountryVariables[values[0]].Count * 10, new DataPoint(-1, float.Parse(values[3]), 0)));
+                                }
+                            }
+                            else
+                            {
+                                if (float.TryParse(values[3], out _))
+                                {
+                                    CountryVariables[values[0]].Add(new TimeStamp(CountryVariables[values[0]].Count * 10, new DataPoint(-1, float.Parse(values[3]), 0)));
+                                }
+                            }
+                            //CountryNames.Add(values[0]);
+
+                            if (float.TryParse(values[3], out _))
+                            {
+                                Stringency.Add(float.Parse(values[3]));
+                                //Debug.WriteLine(values[3]);
+                            }
+                            else
+                            {
+                                Stringency.Add(-1);
+                            }
+                        }
+                        rowCounter2++;
+                    }
+                }
+            }
+
+            int rowCounter3 = 0;
+
+            using (var CaseReader = new StreamReader(@"C:\Users\tafid\Documents\HackathonUCL_2020-1\HackathonUCL\Content\Simulation\Datasets\owid-covid-data.csv"))
+            {
+                while (!CaseReader.EndOfStream)
+                {
+                    var line = CaseReader.ReadLine();
+
+
+                    if (rowCounter3 != 0)
+                    {
                         var values = line.Split(',');
 
-                        if (!CountryVariables.ContainsKey(values[0]))
+                        if (CountryVariables.ContainsKey(values[2]))
                         {
-                            CountryVariables.Add(values[0], new List<TimeStamp>());
-                            if (float.TryParse(values[3], out _))
+                            List<TimeStamp> Stamps = CountryVariables[values[2]];
+                            for (int i = 0; i < Stamps.Count; i++)
                             {
-                                CountryVariables[values[0]].Add(new TimeStamp(CountryVariables[values[0]].Count * 10, new DataPoint(0, float.Parse(values[3]), 0)));
-                            }
-                        }
-                        else
-                        {
-                            if (float.TryParse(values[3], out _))
-                            {
-                                CountryVariables[values[0]].Add(new TimeStamp(CountryVariables[values[0]].Count * 10, new DataPoint(Main.rand.Next(100), float.Parse(values[3]), 0)));
-                            }
-                        }
-                        //CountryNames.Add(values[0]);
+                                TimeStamp Stamp = Stamps[i];
 
-                        if (float.TryParse(values[3], out _))
-                        {
-                            Stringency.Add(float.Parse(values[3]));
-                            //Debug.WriteLine(values[3]);
-                        }
-                        else
-                        {
-                            Stringency.Add(-1);
+                                if (Stamp.Data.Cases == -1 && float.TryParse(values[5], out _))
+                                {
+                                    CountryVariables[values[2]][i] = new TimeStamp(Stamp.Time, new DataPoint((int)float.Parse(values[5]), Stamp.Data.Stringency, 0));
+                                    break;
+                                }
+                            }
                         }
                     }
-                    rowCounter2++;
+                    rowCounter3++;
                 }
             }
 
@@ -129,7 +166,7 @@ namespace HackathonUCL
                         break;
                 }
 
-                Main.Locations.AppendLocation(CountryNames[i], Location, Population[i]);
+                Main.Locations.AppendLocation(CountryNames[i], Location, Population[i], GovernmentType[i]);
             }
         }
     }

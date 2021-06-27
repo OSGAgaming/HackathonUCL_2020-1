@@ -24,24 +24,26 @@ namespace HackathonUCL
         public const float TIMESTEP = 10;
 
         public static bool IsPlaying;
+        public static float StringencyModifier = 1;
 
         public List<Location> Locations = new List<Location>();
         public Vector2 GraphPosition => new Vector2(10, Utils.ScreenSize.Y - 10);
 
-        public float Time { get; set; }
         public static float GraphInterp;
+        public static float TotalTime => NUMBEROFDATAPOINTS * TIMESTEP;
+        public static string FocalLocation = "";
+        public static int FocalIndex = -1;
+        public static bool HasHover = false;
 
         public int DeltaFetchLength;
         public float DeltaTime;
         public float PreviousTime;
-        public static float TotalTime => NUMBEROFDATAPOINTS * TIMESTEP;
+        public float Time { get; set; }
 
-        public static string FocalLocation = "";
-        public static int FocalIndex = -1;
-
-        public void AppendLocation(string Name, Vector2 position, int Population = 0)
+        public void AppendLocation(string Name, Vector2 position, int Population = 0, string GT = "")
         {
             Location l = new Location(Name, position, Population);
+            l.GovernmentType = GT;
             Locations.Add(l);
         }
 
@@ -88,8 +90,8 @@ namespace HackathonUCL
                         float v1 = l.InterpolationValueCache[i - 1];
                         float v2 = l.InterpolationValueCache[i];
 
-                        Vector2 g1 = new Vector2(GraphPosition.X + (i - 1) * 20, GraphPosition.Y - v1 * 0.05f);
-                        Vector2 g2 = new Vector2(GraphPosition.X + i * 20, GraphPosition.Y - v2 * 0.05f);
+                        Vector2 g1 = new Vector2(GraphPosition.X + (i - 1) * 20, GraphPosition.Y - v1);
+                        Vector2 g2 = new Vector2(GraphPosition.X + i * 20, GraphPosition.Y - v2);
 
                         if (i == FetchLength - 1)
                         {
@@ -107,6 +109,8 @@ namespace HackathonUCL
 
             Utils.DrawLine(GraphPosition, GraphPosition - new Vector2(0, MathHelper.SmoothStep(0, 200, Main.GlobalTimer / 100f)), Color.Black, 2);
             Utils.DrawLine(GraphPosition, GraphPosition + new Vector2(MathHelper.SmoothStep(0, 400, Main.GlobalTimer / 100f), 0), Color.Black, 2);
+
+            Utils.DrawText("Total Cases", Color.Black * MathHelper.SmoothStep(0, 1, Main.GlobalTimer / 100f), GraphPosition + new Vector2(MathHelper.SmoothStep(0, 50, Main.GlobalTimer / 100f), -250), 0);
 
             DeltaFetchLength = FetchLength;
         }
@@ -149,6 +153,7 @@ namespace HackathonUCL
                 Main.mainCamera.scale += (1 - Main.mainCamera.scale) / 20f;
             }
 
+            HasHover = false;
         }
     }
 }

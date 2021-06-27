@@ -87,7 +87,7 @@ namespace HackathonUCL
             boids.OnDraw(spriteBatch);
             spriteBatch.End();
 
-            spriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.AlphaBlend, samplerState: SamplerState.PointClamp);
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, samplerState: SamplerState.PointClamp);
 
             for (int i = 0; i < UIScreenManager.Instance?.Components.Count; i++)
             {

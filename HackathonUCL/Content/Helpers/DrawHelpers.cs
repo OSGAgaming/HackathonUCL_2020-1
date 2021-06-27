@@ -68,11 +68,11 @@ namespace HackathonUCL
             float textPositionLeft = position.X - textSize.X / 2;
             Main.spriteBatch.DrawString(font, text, new Vector2(textPositionLeft, position.Y) + textSize / 2, colour, rotation, textSize/2, scale, SpriteEffects.None, 0f);
         }
-        public static float DrawTextToLeft(string text, Color colour, Vector2 position)
+        public static float DrawTextToLeft(string text, Color colour, Vector2 position, float scale = 1, float rotation = 0f)
         {
             SpriteFont font = Main.font;
             float textPositionLeft = position.X;
-            Main.spriteBatch.DrawString(font, text, new Vector2(textPositionLeft, position.Y), colour, 0f, Vector2.Zero, 1, SpriteEffects.None, 0f);
+            Main.spriteBatch.DrawString(font, text, new Vector2(textPositionLeft, position.Y), colour, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 
             return font.MeasureString(text).X;
         }
