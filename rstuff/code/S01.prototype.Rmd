@@ -63,6 +63,8 @@ library(tidyverse)
 library(data.table)
 library(maps)
 library(viridis)
+library(readxl)
+library(ggpmisc)
 ```
 
 ## Version Info
@@ -80,6 +82,7 @@ DATE=Sys.Date()
 ```
 
 # Load and Format Oxford Government Response data
+
 Data Source:
 [https://github.com/OxCGRT/covid-policy-tracker](https://github.com/OxCGRT/covid-policy-tracker)
 
@@ -118,9 +121,16 @@ data_natiowide_june_1st = data_nationwide %>%
 ## Total death COVID numbers till 1st of June 2021
 ```{r}
 world_map <- map_data("world")
+# rename some world mape countries for merging
+
+world_map[world_map$region=="USA",]$region ="United States"
+world_map[world_map$region=="UK",]$region ="United Kingdom"
+
+
 plot_data01 = world_map %>% 
   left_join(data_natiowide_june_1st[,c("CountryName", "ConfirmedDeaths")], 
             by=c("region"="CountryName"))
+
 
 ggplot(plot_data01, aes(x = long, y = lat, group = group)) +
   geom_polygon(aes(fill = ConfirmedDeaths ), color = "white")+
@@ -137,35 +147,73 @@ plot_data02 = world_map %>%
 ggplot(plot_data02, aes(x = long, y = lat, group = group)) +
   geom_polygon(aes(fill = StringencyIndex ), color = "white")+
   scale_fill_viridis_c(option = "C") +
-  theme_void() 
+  theme_void()
 ```
 
 
 # Load further annotation data
-Sources:
+
+Sources:   
 - population numbers for 2020: [https://www.worldometers.info/world-population/population-by-country/](https://www.worldometers.info/world-population/population-by-country/)
-- democracy index and government type: [https://en.wikipedia.org/wiki/Democracy_Index](https://en.wikipedia.org/wiki/Democracy_Index)
+- democracy index and government type: [https://en.wikipedia.org/wiki/Democracy_Index](https://en.wikipedia.org/wiki/Democracy_Index) scrapped [here](https://docs.google.com/spreadsheets/d/1d0noZrwAWxNBTDSfDgG06_aLGWUz4R6fgDhRaUZbDzE/edit?usp=sharing) 
+
+## read democracy index
 ```{r}
-annotation = fread(paste0(INPUTFOLDER, "further_annotations.csv"))
+democracy_index = readxl::read_xlsx(paste0(INPUTFOLDER,"_EIU-Democracy Indices - Dataset - v4.xlsx"), sheet=4) %>% 
+  #only keep data for year 2020
+  filter(time==2020) %>% 
+  mutate(DemocracyIndex2020 = `Democracy index (EIU)`/10) %>% 
+  select(CountryName = name,
+        DemocracyIndex2020) %>% 
+  mutate(Government_Style  =case_when(
+    DemocracyIndex2020 >8 ~ "Full democracies",
+    DemocracyIndex2020 >6 ~ "Flawed democracies",
+    DemocracyIndex2020 >4 ~ "Hybrid regimes",
+    DemocracyIndex2020>0 | DemocracyIndex2020==0 ~"Authoritarian regimes"))
+
+# renaming some countries to merge data
+democracy_index[democracy_index$CountryName=="Congo, Dem. Rep.",]$CountryName  = "Democratic Republic of Congo"
+democracy_index[democracy_index$CountryName=="Congo, Rep.",]$CountryName = "Congo"
+democracy_index[democracy_index$CountryName=="Hong Kong, China",]$CountryName = "Hong Kong"
+democracy_index[democracy_index$CountryName=="United States",]$CountryName = "United States"
+
 ```
 
-## look at annotations for some examplary countries
+## world population
 ```{r}
-annotation %>% myDT()
+population = readxl::read_xlsx(paste0(INPUTFOLDER,"_EIU-Democracy Indices - Dataset - v4.xlsx"), sheet=16) %>% 
+  #only keep data for year 2020
+  filter(time==2020) %>% 
+  select(CountryName = name,
+        PopulationNumber2020 = "Population") 
+
+# renaming some countries to merge data
+population[population$CountryName=="Congo, Dem. Rep.",]$CountryName  = "Democratic Republic of Congo"
+population[population$CountryName=="Congo, Rep.",]$CountryName = "Congo"
+population[population$CountryName=="Hong Kong, China",]$CountryName = "Hong Kong"
 ```
 
-## Combine with Oxford data
+
+## merge annotation data
 ```{r}
 data_natiowide_june_1st_annotation = data_natiowide_june_1st %>% 
-  inner_join(annotation, by="CountryName")
+  left_join(democracy_index) %>% 
+  left_join(population) %>% 
+  # derive further annotations
+  mutate(TotalCases = ConfirmedCases,
+         TotalDeaths = ConfirmedDeaths) %>% 
+  mutate(Cases_per_100k = TotalCases/PopulationNumber2020 * 100000,
+         Deaths_per_100k = TotalDeaths/PopulationNumber2020 * 100000)
+  
 ```
+
 
 # Analysis Influence of Governement System on Policy Stringency
 
 ## Plot Government System for chosen countries
 ```{r}
 plot_data03 = world_map %>% 
-  left_join(data_natiowide_june_1st_annotation[,c("CountryName", "Government_Style", "StringencyIndex")], 
+  left_join(data_natiowide_june_1st_annotation[,c("CountryName", "Government_Style", "StringencyIndex", "DemocracyIndex2020")], 
             by=c("region"="CountryName"))
 
 ggplot(plot_data03, aes(x = long, y = lat, group = group)) +
@@ -173,17 +221,17 @@ ggplot(plot_data03, aes(x = long, y = lat, group = group)) +
   theme_void() 
 ```
 
-## Compare Policy Stringency
+## Compare Policy Stringency on Governement System
 ```{r}
-ggplot(plot_data03, aes(x=Government_Style, y=StringencyIndex,
-                        color=Government_Style)) +
+ggplot(data_natiowide_june_1st_annotation, aes(x=Government_Style, y=StringencyIndex,  color=Government_Style)) +
    theme_bw() +
   #geom_point(position=position_jitter(width=0.3), alpha=0.6) +
   geom_boxplot(size=1.4,fill=NA, outlier.size=0) +
   geom_boxplot(size=1.4,fill=NA, outlier.size=0, color=alpha("black",0.3)) +
  
     # change titles here:
-  #labs(y="Y Axis title", x="X Axis Title", title="Title") +
+  labs(y="COVID-19 Policy Stringency", x="Governmental System",
+       title="Differences in Policy by Government System") +
   theme(title = element_text(size=rel(1.3), face = "bold"),
         axis.title.y = element_text(vjust=1.5),
         axis.title.x = element_text(vjust=-1.5),
@@ -194,5 +242,132 @@ ggplot(plot_data03, aes(x=Government_Style, y=StringencyIndex,
         plot.margin = unit(c(1,1,1,2), "cm"),
         panel.grid.major = element_line(colour="grey60"))
 
+```
+
+## Association between Policy Stringency and Governement Index
+```{r}
+ggplot(data_natiowide_june_1st_annotation,
+       aes(x=DemocracyIndex2020, y=StringencyIndex)) +
+   theme_bw() +
+  geom_point(aes(color=Government_Style)) +
+  geom_smooth(method='lm', formula= y~x, se = FALSE) +
+  stat_poly_eq(formula = y~x, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +
+  theme(title = element_text(size=rel(1.3), face = "bold"),
+        axis.title.y = element_text(vjust=1.5),
+        axis.title.x = element_text(vjust=-1.5),
+        axis.text = element_text(size=rel(1.25)),
+        axis.text.x = element_text(angle = 30,hjust = 1),
+        legend.text = element_text(size=rel(1.3)),
+        strip.text = element_text(size=rel(1.3)),
+        plot.margin = unit(c(1,1,1,2), "cm"),
+        panel.grid.major = element_line(colour="grey60"))
+
+```
+
+## Association between Policy Stringency and Death_per_100K
+```{r}
+ggplot(data_natiowide_june_1st_annotation,
+       aes(x=log10(Deaths_per_100k), y=StringencyIndex)) +
+   theme_bw() +
+  geom_point(aes(color=Government_Style)) +
+  geom_smooth(method='lm', formula= y~x, se = FALSE) +
+  stat_poly_eq(formula = y~x, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +
+  theme(title = element_text(size=rel(1.3), face = "bold"),
+        axis.title.y = element_text(vjust=1.5),
+        axis.title.x = element_text(vjust=-1.5),
+        axis.text = element_text(size=rel(1.25)),
+        axis.text.x = element_text(angle = 30,hjust = 1),
+        legend.text = element_text(size=rel(1.3)),
+        strip.text = element_text(size=rel(1.3)),
+        plot.margin = unit(c(1,1,1,2), "cm"),
+        panel.grid.major = element_line(colour="grey60"))
+
+```
+
+
+## Assocaition between Policy Stringency and Cases_per_100K
+```{r}
+ggplot(data_natiowide_june_1st_annotation,
+       aes(x=log10(Cases_per_100k), y=StringencyIndex)) +
+   theme_bw() +
+  geom_point(aes(color=Government_Style)) +
+  geom_smooth(method='lm', formula= y~x, se = FALSE) +
+  stat_poly_eq(formula = y~x, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +
+  theme(title = element_text(size=rel(1.3), face = "bold"),
+        axis.title.y = element_text(vjust=1.5),
+        axis.title.x = element_text(vjust=-1.5),
+        axis.text = element_text(size=rel(1.25)),
+        axis.text.x = element_text(angle = 30,hjust = 1),
+        legend.text = element_text(size=rel(1.3)),
+        strip.text = element_text(size=rel(1.3)),
+        plot.margin = unit(c(1,1,1,2), "cm"),
+        panel.grid.major = element_line(colour="grey60"))
+
+```
+
+
+## Assocaition between DemocracyIndex in 2020 and Death_per_100K
+```{r}
+ggplot(data_natiowide_june_1st_annotation,
+       aes(x=log10(Deaths_per_100k), y=DemocracyIndex2020)) +
+   theme_bw() +
+  geom_point(aes(color=Government_Style)) +
+  geom_smooth(method='lm', formula= y~x, se = FALSE) +
+  stat_poly_eq(formula = y~x, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +
+  theme(title = element_text(size=rel(1.3), face = "bold"),
+        axis.title.y = element_text(vjust=1.5),
+        axis.title.x = element_text(vjust=-1.5),
+        axis.text = element_text(size=rel(1.25)),
+        axis.text.x = element_text(angle = 30,hjust = 1),
+        legend.text = element_text(size=rel(1.3)),
+        strip.text = element_text(size=rel(1.3)),
+        plot.margin = unit(c(1,1,1,2), "cm"),
+        panel.grid.major = element_line(colour="grey60"))
+
+```
+
+## Association between DemocracyIndex in 2020 and Cases_per_100K
+```{r}
+ggplot(data_natiowide_june_1st_annotation,
+       aes(x=log10(Cases_per_100k), y=DemocracyIndex2020)) +
+   theme_bw() +
+  geom_point(aes(color=Government_Style)) +
+  geom_smooth(method='lm', formula= y~x, se = FALSE) +
+  stat_poly_eq(formula = y~x, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +
+  theme(title = element_text(size=rel(1.3), face = "bold"),
+        axis.title.y = element_text(vjust=1.5),
+        axis.title.x = element_text(vjust=-1.5),
+        axis.text = element_text(size=rel(1.25)),
+        axis.text.x = element_text(angle = 30,hjust = 1),
+        legend.text = element_text(size=rel(1.3)),
+        strip.text = element_text(size=rel(1.3)),
+        plot.margin = unit(c(1,1,1,2), "cm"),
+        panel.grid.major = element_line(colour="grey60"))
+
+```
+
+
+# Output Data for monogame
+```{r}
+output = data_natiowide_june_1st_annotation %>% 
+  select("CountryName","PopulationNumber2020","Government_Style",
+         "DemocracyIndex2020","TotalCases","TotalDeaths","Cases_per_100k","Deaths_per_100k","StringencyIndex")
+
+```
+
+## save
+```{r}
+write_csv(output,
+          paste0(OUTFOLDER, SCRIPT, ".number_for_monogame.", DATE, ".csv"))
 ```
 
